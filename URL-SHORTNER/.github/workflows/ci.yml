@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  test:
+    name: Lint & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Lint with flake8
+        run: |
+          # Stop the build if there are syntax errors or undefined names
+          flake8 app.py shortener.py --count --select=E9,F63,F7,F82 --show-source --statistics
+          # Treat all other issues as warnings (max line length 100)
+          flake8 app.py shortener.py --count --max-line-length=100 --statistics
+
+      - name: Run unit tests
+        run: pytest tests/test_shortener.py -v
+
+      - name: Run integration tests
+        run: pytest tests/test_routes.py -v
+
+      - name: Run all tests with coverage
+        run: |
+          pytest tests/ \
+            --cov=. \
+            --cov-report=term-missing \
+            --cov-fail-under=80
